@@ -1,10 +1,10 @@
 from typing import Type
 
-import pytest
 from django.db.models import Model
-from mixer.backend.django import Mixer
 
+import pytest
 from fixtures.types import CommentModelAdapterT
+from mixer.backend.django import Mixer
 
 
 @pytest.fixture

@@ -1,23 +1,18 @@
 from typing import Tuple, Union
 
-import bs4
-from django.db.models import QuerySet, Model
+from django.db.models import Model, QuerySet
 from django.forms import BaseForm
 from django.http import HttpResponse
 
+import bs4
 from conftest import TitledUrlRepr
 from fixtures.types import ModelAdapterT
-from form.base_form_tester import (
-    FormTagMissingException,
-    FormMethodException,
-    TextareaMismatchException,
-    TextareaTagMissingException,
-)
-from form.base_form_tester import (
-    SubmitTester,
-    FormValidationException,
-    ItemCreatedException,
-)
+from form.base_form_tester import (FormMethodException,
+                                   FormTagMissingException,
+                                   FormValidationException,
+                                   ItemCreatedException, SubmitTester,
+                                   TextareaMismatchException,
+                                   TextareaTagMissingException)
 from form.post.form_tester import PostFormTester
 
 

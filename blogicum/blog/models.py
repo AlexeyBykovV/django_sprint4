@@ -2,9 +2,9 @@ from django.contrib.auth import get_user_model
 from django.db import models
 from django.utils import timezone
 
-from blogicum.constants import MAX_LENGTH_CHAR, MAX_LENGTH_SLUG
 from core.models import PublishedModel, PublishedTitle
 
+from blogicum.constants import MAX_LENGTH_CHAR, MAX_LENGTH_SLUG
 
 User = get_user_model()
 
@@ -112,7 +112,7 @@ class Comment(models.Model):
     """Модель описывающая поля Комментарий."""
 
     text = models.TextField(
-        verbose_name="Комментарий",
+        verbose_name='Комментарий',
     )
     post = models.ForeignKey(
         Post,
@@ -132,6 +132,7 @@ class Comment(models.Model):
     )
 
     class Meta:
+        ordering = ('created_at',)
         verbose_name = 'комментарий'
         verbose_name_plural = 'Комментарии'
 

@@ -1,11 +1,10 @@
 """Модуль с миксинами для модуля blog/views.py."""
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.http import HttpResponseForbidden
+from django.shortcuts import get_object_or_404
 from django.urls import reverse, reverse_lazy
 
-from django.shortcuts import get_object_or_404
-from django.http import HttpResponseForbidden
-
-from blog.forms import PostForm, CommentForm
+from blog.forms import CommentForm, PostForm
 from blog.models import Comment, Post
 
 

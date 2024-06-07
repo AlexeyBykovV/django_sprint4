@@ -31,7 +31,7 @@ urlpatterns = [
         name='create_post'
     ),
     path(
-        'posts/<int:post_id>',
+        'posts/<int:post_id>/',
         views.PostDetailView.as_view(),
         name='post_detail'
     ),

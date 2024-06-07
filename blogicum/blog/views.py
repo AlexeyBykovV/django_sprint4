@@ -1,19 +1,18 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.mail import send_mail
+from django.db.models import Count
 from django.shortcuts import get_object_or_404, redirect
-
 from django.urls import reverse, reverse_lazy
 from django.views.generic import (
-    ListView, DetailView, CreateView, UpdateView, DeleteView
+    CreateView, DeleteView, DetailView, ListView, UpdateView
 )
 
 from blogicum.constants import NUM_OF_POSTS
-from .models import User, Post, Category, Comment
-from .forms import ProfileForm, PostForm, CommentForm
-from .mixin import PostMixin, CommentMixin
-from .utils import get_all_post_published_query
 
-from django.db.models import Count
+from .forms import CommentForm, PostForm, ProfileForm
+from .mixin import CommentMixin, PostMixin
+from .models import Category, Comment, Post, User
+from .utils import get_all_post_published_query
 
 
 class IndexListView(ListView):
@@ -22,14 +21,18 @@ class IndexListView(ListView):
     Атрибуты класса:
         - model: Класс модели, для получения данных.
         - template_name: Имя шаблона, для отображения страницы.
-        - queryset: Запрос, определяющий список постов для отображения.
+        - queryset: Запрос, определяющий список публикаций для отображения.
         - paginate_by: Количество публикаций на одной странице.
     """
 
     model = Post
     template_name = 'blog/index.html'
-    queryset = get_all_post_published_query()
     paginate_by = NUM_OF_POSTS
+
+    def get_queryset(self):
+        """Возвращает список публикаций."""
+        posts = get_all_post_published_query()
+        return posts
 
 
 class ProfileView(ListView):
@@ -98,7 +101,7 @@ class ProfileUpdateView(LoginRequiredMixin, UpdateView):
 
 
 class PostDetailView(PostMixin, DetailView):
-    """Страница выбранного поста.
+    """Страница выбранной публикации.
 
     Атрибуты класса:
     - template_name: Имя шаблона, для отображения страницы.
@@ -107,7 +110,7 @@ class PostDetailView(PostMixin, DetailView):
     template_name = 'blog/detail.html'
 
     def get_object(self):
-        """Возвращает пост."""
+        """Возвращает данные публикацию."""
         post = get_object_or_404(
             Post,
             pk=self.kwargs[self.pk_url_kwarg]
@@ -127,30 +130,29 @@ class PostDetailView(PostMixin, DetailView):
         context['comments'] = (
             self.get_object()
             .comments.all()
-            .order_by('created_at')
-            )
+        )
         return context
 
 
 class PostCreateView(PostMixin, LoginRequiredMixin, CreateView):
-    """Создание поста."""
+    """Создание публикации."""
 
     def form_valid(self, form):
-        """Проверяет, форму и устанавливает автора поста."""
+        """Проверяет, форму и устанавливает автора публикации."""
         form.instance.author = self.request.user
         return super().form_valid(form)
 
     def get_success_url(self):
-        """Возвращает URL для перенаправления после создания поста."""
+        """Возвращает URL для перенаправления после создания публикации."""
         return reverse('blog:profile',
                        kwargs={'username': self.request.user})
 
 
 class PostUpdateView(PostMixin, LoginRequiredMixin, UpdateView):
-    """Редактирование поста."""
+    """Редактирование публикации."""
 
     def dispatch(self, request, *args, **kwargs):
-        """Проверяет, является ли пользователь автором поста."""
+        """Проверяет, является ли пользователь автором публикации."""
         if self.get_object().author != request.user:
             return redirect(
                 'blog:post_detail',
@@ -160,10 +162,10 @@ class PostUpdateView(PostMixin, LoginRequiredMixin, UpdateView):
 
 
 class PostDeleteView(PostMixin, LoginRequiredMixin, DeleteView):
-    """Удаление поста."""
+    """Удаление публикации."""
 
     def dispatch(self, request, *args, **kwargs):
-        """Проверяет, является ли пользователь автором поста."""
+        """Проверяет, является ли пользователь автором публикации."""
         if self.get_object().author != request.user:
             return redirect(
                 'blog:post_detail',
@@ -178,14 +180,14 @@ class PostDeleteView(PostMixin, LoginRequiredMixin, DeleteView):
         return context
 
     def get_success_url(self):
-        """Возвращает URL перенаправления после удаления поста."""
+        """Возвращает URL перенаправления после удаления публикации."""
         username = self.request.user
         return reverse_lazy('blog:profile',
                             kwargs={'username': username})
 
 
 class CategoryDetailView(IndexListView):
-    """Страница со списком постов выбранной категории.
+    """Страница со списком публикаций выбранной категории.
 
     Атрибуты класса:
     - template_name: Имя шаблона, используемого для отображения страницы.
@@ -215,7 +217,7 @@ class CommentCreateView(LoginRequiredMixin, CreateView):
     - model: Класс модели, используемой для создания комментария.
     - form_class: Класс формы, используемый для создания комментария.
     - template_name: Имя шаблона, используемого для отображения страницы.
-    - post_data: Объект поста, к которому создается комментарий.
+    - post_data: Объект публикации, к которому создается комментарий.
     """
 
     model = Comment
@@ -224,7 +226,7 @@ class CommentCreateView(LoginRequiredMixin, CreateView):
     post_data = None
 
     def dispatch(self, request, *args, **kwargs):
-        """Получает объект поста."""
+        """Получает объект публикации."""
         self.post_data = get_object_or_404(Post, pk=self.kwargs['post_id'])
         return super().dispatch(request, *args, **kwargs)
 
@@ -243,13 +245,13 @@ class CommentCreateView(LoginRequiredMixin, CreateView):
         return context
 
     def send_author_email(self):
-        """Отправляет email автору поста, при добавлении комментария."""
+        """Отправляет email автору публикации, при добавлении комментария."""
         post_url = self.request.build_absolute_uri(self.get_success_url())
         recipient_email = self.post_data.author.email
         subject = 'New comment'
         message = (
             f'Пользователь {self.request.user} оставил комментарий '
-            f'к посту {self.post_data.title}.'
+            f'к публикации {self.post_data.title}.'
             f'Читать комментарий {post_url}'
         )
         send_mail(

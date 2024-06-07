@@ -5,9 +5,9 @@ import django.test
 from django.http import HttpResponse
 from django.urls import NoReverseMatch
 
+from conftest import KeyVal, get_page_context_form
 from fixtures.types import CommentModelAdapterT
 from form.find_urls import find_links_between_lines, get_url_display_names
-from conftest import KeyVal, get_page_context_form
 
 
 def find_edit_and_delete_urls(

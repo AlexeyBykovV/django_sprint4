@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Type, Optional, Union
+from typing import Optional, Type, Union
 
 from django.db.models import Model
 from django.test import Client

@@ -1,11 +1,11 @@
 from inspect import isclass
 from typing import Type
 
-import pytest
 from django.contrib.auth import get_user_model
 from django.db import models
 from django.db.models import Model
 
+import pytest
 from adapters.student_adapter import StudentModelAdapter
 from blog.models import Post
 from conftest import COMMENT_TEXT_DISPLAY_LEN_FOR_TESTS

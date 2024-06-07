@@ -4,9 +4,10 @@ import os
 import uuid
 from importlib import import_module
 
-import pytest
 from django.conf import settings
 from django.http import HttpRequest
+
+import pytest
 from pytest_django.asserts import assertTemplateUsed
 
 
