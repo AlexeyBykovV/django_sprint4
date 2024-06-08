@@ -9,6 +9,8 @@ DEBUG = True
 ALLOWED_HOSTS = [
     'localhost',
     '127.0.0.1',
+    'www.alexbykov.pythonanywhere.com',
+    'alexbykov.pythonanywhere.com',
 ]
 
 INTERNAL_IPS = [
@@ -107,6 +109,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
 
 EMAIL_FILE_PATH = BASE_DIR / 'sent_emails'
+
+FROM_EMAIL = 'from@example.com'
 
 LOGIN_REDIRECT_URL = 'blog:index'
 

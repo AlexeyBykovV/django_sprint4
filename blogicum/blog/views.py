@@ -1,7 +1,8 @@
+from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.mail import send_mail
 from django.db.models import Count
-from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import get_object_or_404
 from django.urls import reverse, reverse_lazy
 from django.views.generic import (
     CreateView, DeleteView, DetailView, ListView, UpdateView
@@ -10,7 +11,7 @@ from django.views.generic import (
 from blogicum.constants import NUM_OF_POSTS
 
 from .forms import CommentForm, PostForm, ProfileForm
-from .mixin import CommentMixin, PostMixin
+from .mixin import CommentMixin, PostChangeMixin, PostMixin
 from .models import Category, Comment, Post, User
 from .utils import get_all_post_published_query
 
@@ -31,8 +32,7 @@ class IndexListView(ListView):
 
     def get_queryset(self):
         """Возвращает список публикаций."""
-        posts = get_all_post_published_query()
-        return posts
+        return get_all_post_published_query()
 
 
 class ProfileView(ListView):
@@ -58,8 +58,7 @@ class ProfileView(ListView):
         )
         if self.request.user == profile:
             return (
-                Post.objects
-                .filter(author=profile)
+                profile.posts.all()
                 .annotate(comment_count=Count('comments'))
                 .order_by('-pub_date')
             )
@@ -68,13 +67,13 @@ class ProfileView(ListView):
 
     def get_context_data(self, **kwargs):
         """Возвращает контекстные данные для шаблона."""
-        context = super().get_context_data(**kwargs)
-        profile = get_object_or_404(
-            User,
-            username=self.kwargs[self.pk_url_kwarg]
+        return dict(
+            **super().get_context_data(**kwargs),
+            profile=get_object_or_404(
+                User,
+                username=self.kwargs[self.pk_url_kwarg]
+            )
         )
-        context['profile'] = profile
-        return context
 
 
 class ProfileUpdateView(LoginRequiredMixin, UpdateView):
@@ -125,13 +124,11 @@ class PostDetailView(PostMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         """Возвращает контекстные данные для шаблона."""
-        context = super().get_context_data(**kwargs)
-        context['form'] = CommentForm()
-        context['comments'] = (
-            self.get_object()
-            .comments.all()
+        return dict(
+            **super().get_context_data(**kwargs),
+            form=CommentForm(),
+            comments=self.get_object().comments.all()
         )
-        return context
 
 
 class PostCreateView(PostMixin, LoginRequiredMixin, CreateView):
@@ -148,36 +145,19 @@ class PostCreateView(PostMixin, LoginRequiredMixin, CreateView):
                        kwargs={'username': self.request.user})
 
 
-class PostUpdateView(PostMixin, LoginRequiredMixin, UpdateView):
+class PostUpdateView(PostChangeMixin, LoginRequiredMixin, UpdateView):
     """Редактирование публикации."""
 
-    def dispatch(self, request, *args, **kwargs):
-        """Проверяет, является ли пользователь автором публикации."""
-        if self.get_object().author != request.user:
-            return redirect(
-                'blog:post_detail',
-                post_id=self.kwargs[self.pk_url_kwarg]
-            )
-        return super().dispatch(request, *args, **kwargs)
 
-
-class PostDeleteView(PostMixin, LoginRequiredMixin, DeleteView):
+class PostDeleteView(PostChangeMixin, LoginRequiredMixin, DeleteView):
     """Удаление публикации."""
-
-    def dispatch(self, request, *args, **kwargs):
-        """Проверяет, является ли пользователь автором публикации."""
-        if self.get_object().author != request.user:
-            return redirect(
-                'blog:post_detail',
-                post_id=self.kwargs[self.pk_url_kwarg]
-            )
-        return super().dispatch(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         """Возвращает контекстные данные для шаблона."""
-        context = super().get_context_data(**kwargs)
-        context['form'] = PostForm(instance=self.object)
-        return context
+        return dict(
+            **super().get_context_data(**kwargs),
+            form=PostForm(instance=self.object)
+        )
 
     def get_success_url(self):
         """Возвращает URL перенаправления после удаления публикации."""
@@ -205,9 +185,10 @@ class CategoryDetailView(IndexListView):
 
     def get_context_data(self, **kwargs):
         """Возвращает контекстные данные для шаблона."""
-        context = super().get_context_data(**kwargs)
-        context['category'] = self.category
-        return context
+        return dict(
+            **super().get_context_data(**kwargs),
+            category=self.category
+        )
 
 
 class CommentCreateView(LoginRequiredMixin, CreateView):
@@ -240,9 +221,10 @@ class CommentCreateView(LoginRequiredMixin, CreateView):
 
     def get_context_data(self, **kwargs):
         """Возвращает контекстные данные для шаблона."""
-        context = super().get_context_data(**kwargs)
-        context['post'] = get_object_or_404(Post, pk=self.kwargs['post_id'])
-        return context
+        return dict(
+            **super().get_context_data(**kwargs),
+            post=get_object_or_404(Post, pk=self.kwargs['post_id'])
+        )
 
     def send_author_email(self):
         """Отправляет email автору публикации, при добавлении комментария."""
@@ -257,7 +239,7 @@ class CommentCreateView(LoginRequiredMixin, CreateView):
         send_mail(
             subject=subject,
             message=message,
-            from_email="from@example.com",
+            from_email=settings.FROM_EMAIL,
             recipient_list=[recipient_email],
             fail_silently=True,
         )

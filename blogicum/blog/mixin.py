@@ -1,8 +1,8 @@
 """Модуль с миксинами для модуля blog/views.py."""
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import HttpResponseForbidden
-from django.shortcuts import get_object_or_404
-from django.urls import reverse, reverse_lazy
+from django.shortcuts import get_object_or_404, redirect
+from django.urls import reverse
 
 from blog.forms import CommentForm, PostForm
 from blog.models import Comment, Post
@@ -25,10 +25,23 @@ class PostMixin(LoginRequiredMixin):
 
     def get_success_url(self):
         """Возвращает URL перенаправления."""
-        return reverse_lazy(
+        return reverse(
             'blog:post_detail',
-            kwargs={'post_id': self.kwargs['post_id']}
+            args=[self.kwargs['post_id']]
         )
+
+
+class PostChangeMixin(PostMixin):
+    """Миксин для редактирования/удаления публикации."""
+
+    def dispatch(self, request, *args, **kwargs):
+        """Проверяет, является ли пользователь автором публикации."""
+        if self.get_object().author != request.user:
+            return redirect(
+                'blog:post_detail',
+                post_id=self.kwargs[self.pk_url_kwarg]
+            )
+        return super().dispatch(request, *args, **kwargs)
 
 
 class CommentMixin(LoginRequiredMixin):
@@ -62,8 +75,8 @@ class CommentMixin(LoginRequiredMixin):
         return super().dispatch(request, *args, **kwargs)
 
     def get_success_url(self):
-        """Возвращает URL перенаправления после изменения/удаления поста."""
+        """Возвращает URL перенаправления после edit/delete комментария."""
         return reverse(
             'blog:post_detail',
-            kwargs={'post_id': self.kwargs['post_id']}
+            args=[self.kwargs['post_id']]
         )
