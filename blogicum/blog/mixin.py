@@ -25,10 +25,7 @@ class PostMixin(LoginRequiredMixin):
 
     def get_success_url(self):
         """Возвращает URL перенаправления."""
-        return reverse(
-            'blog:post_detail',
-            args=[self.kwargs['post_id']]
-        )
+        return reverse('blog:post_detail', args=[self.kwargs['post_id']])
 
 
 class PostChangeMixin(PostMixin):
@@ -76,7 +73,4 @@ class CommentMixin(LoginRequiredMixin):
 
     def get_success_url(self):
         """Возвращает URL перенаправления после edit/delete комментария."""
-        return reverse(
-            'blog:post_detail',
-            args=[self.kwargs['post_id']]
-        )
+        return reverse('blog:post_detail', args=[self.kwargs['post_id']])

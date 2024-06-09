@@ -3,7 +3,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.mail import send_mail
 from django.db.models import Count
 from django.shortcuts import get_object_or_404
-from django.urls import reverse, reverse_lazy
+from django.urls import reverse
 from django.views.generic import (
     CreateView, DeleteView, DetailView, ListView, UpdateView
 )
@@ -95,8 +95,7 @@ class ProfileUpdateView(LoginRequiredMixin, UpdateView):
 
     def get_success_url(self):
         """Возвращает URL для перенаправления после обновления профиля."""
-        return reverse('blog:profile',
-                       kwargs={'username': self.request.user})
+        return reverse('blog:profile', args=[self.request.user])
 
 
 class PostDetailView(PostMixin, DetailView):
@@ -141,8 +140,7 @@ class PostCreateView(PostMixin, LoginRequiredMixin, CreateView):
 
     def get_success_url(self):
         """Возвращает URL для перенаправления после создания публикации."""
-        return reverse('blog:profile',
-                       kwargs={'username': self.request.user})
+        return reverse('blog:profile', args=[self.request.user])
 
 
 class PostUpdateView(PostChangeMixin, LoginRequiredMixin, UpdateView):
@@ -161,9 +159,7 @@ class PostDeleteView(PostChangeMixin, LoginRequiredMixin, DeleteView):
 
     def get_success_url(self):
         """Возвращает URL перенаправления после удаления публикации."""
-        username = self.request.user
-        return reverse_lazy('blog:profile',
-                            kwargs={'username': username})
+        return reverse('blog:profile', args=[self.request.user])
 
 
 class CategoryDetailView(IndexListView):
@@ -246,10 +242,7 @@ class CommentCreateView(LoginRequiredMixin, CreateView):
 
     def get_success_url(self):
         """Возвращает URL перенаправления."""
-        return reverse(
-            'blog:post_detail',
-            kwargs={'post_id': self.kwargs['post_id']}
-        )
+        return reverse('blog:post_detail', args=[self.kwargs['post_id']])
 
 
 class CommentUpdateView(CommentMixin, LoginRequiredMixin, UpdateView):
